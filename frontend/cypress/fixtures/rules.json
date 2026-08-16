@@ -1,0 +1,4 @@
+[
+  { "id": "r1", "name": "Great League Cap", "description": "Level-Limit 50, keine Legendären.", "maxLevel": 50 },
+  { "id": "r2", "name": "Legendary Showdown", "description": "Bis zu 2 Legendäre erlaubt.", "maxLegendaries": 2 }
+]

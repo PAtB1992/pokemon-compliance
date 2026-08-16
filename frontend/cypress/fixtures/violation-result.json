@@ -1,0 +1,13 @@
+{
+  "isCompliant": false,
+  "violations": [
+    {
+      "id": "v1",
+      "trainerId": "t1",
+      "ruleId": "r1",
+      "ruleName": "Great League Cap",
+      "severity": "HIGH",
+      "details": "Charizard (Level 80) überschreitet das Level-Limit von 50."
+    }
+  ]
+}

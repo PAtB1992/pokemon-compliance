@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tutorial: Pokémon Compliance Center von Grund auf verstehen</title>
+<style>
+  :root {
+    --bg: #0f1420;
+    --bg-panel: #161d2e;
+    --bg-card: #1c2438;
+    --accent: #5fb3ff;
+    --accent2: #7ee8b8;
+    --text: #e6ebf5;
+    --text-dim: #9aa7c2;
+    --border: #2a3552;
+    --code-bg: #10182b;
+    --warn: #ffb454;
+    --danger: #ff7a7a;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout { display: flex; min-height: 100vh; }
+
+  nav.sidebar {
+    width: 310px;
+    flex-shrink: 0;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    padding: 20px 14px 60px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  nav.sidebar h1 {
+    font-size: 15px;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 4px;
+  }
+  nav.sidebar .subtitle { font-size: 12px; color: var(--text-dim); margin-bottom: 18px; }
+  nav.sidebar .group-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-dim);
+    margin: 18px 0 6px;
+    padding-left: 6px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+  nav.sidebar .group-title:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+  nav.sidebar ul { list-style: none; margin: 0; padding: 0; }
+  nav.sidebar li a { display: block; padding: 5px 8px; border-radius: 6px; color: var(--text); font-size: 13px; }
+  nav.sidebar li a:hover { background: var(--bg-card); text-decoration: none; }
+  nav.sidebar li a.step-link { color: var(--accent2); }
+
+  main { flex: 1; padding: 40px 48px 120px; max-width: 980px; }
+
+  header.hero { margin-bottom: 40px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+  header.hero h1 { font-size: 28px; margin: 0 0 8px; }
+  header.hero p.lead { color: var(--text-dim); font-size: 15px; max-width: 720px; }
+
+  section { margin-bottom: 56px; scroll-margin-top: 20px; }
+  section h2 {
+    font-size: 23px;
+    color: var(--accent2);
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+  }
+  section h3 { font-size: 18px; color: var(--accent); margin-top: 30px; scroll-margin-top: 20px; }
+  section h4 { font-size: 15px; color: var(--text); margin-top: 20px; margin-bottom: 6px; }
+
+  .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin: 14px 0; }
+  .card.why { border-left: 4px solid var(--accent2); }
+  .card.warn { border-left: 4px solid var(--warn); }
+  .card.file { border-left: 4px solid var(--accent); }
+  .card.pitfall { border-left: 4px solid var(--danger); }
+
+  .filepath {
+    display: inline-block;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 5px;
+    color: var(--accent2);
+    margin-bottom: 8px;
+  }
+
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--bg-card); color: var(--accent2); }
+
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+  code { font-family: "SF Mono", Menlo, Consolas, monospace; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+  pre code { background: none; padding: 0; }
+
+  .step-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: rgba(95,179,255,0.15);
+    color: var(--accent);
+    margin-right: 8px;
+  }
+
+  .checklist { list-style: none; padding: 0; margin: 12px 0; }
+  .checklist li { padding: 6px 0 6px 26px; position: relative; }
+  .checklist li::before { content: "☐"; position: absolute; left: 0; color: var(--accent2); }
+
+  .back-top { display: inline-block; margin-top: 30px; font-size: 12px; color: var(--text-dim); }
+
+  ::selection { background: rgba(95,179,255,0.3); }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    nav.sidebar { width: 100%; height: auto; position: relative; }
+    main { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="sidebar">
+  <h1>Tutorial</h1>
+  <div class="subtitle">Pokémon Compliance Center<br>von Grund auf verstehen, Schritt für Schritt</div>
+
+  <div class="group-title">Start</div>
+  <ul>
+    <li><a href="#howto">Wie dieses Tutorial funktioniert</a></li>
+    <li><a href="#big-picture">Die große Vogelperspektive</a></li>
+  </ul>
+
+  <div class="group-title">Teil 1 — Backend-Fundament</div>
+  <ul>
+    <li><a class="step-link" href="#step1">1. Warum NestJS &amp; Dependency Injection</a></li>
+    <li><a class="step-link" href="#step2">2. package.json lesen lernen</a></li>
+    <li><a class="step-link" href="#step3">3. main.ts — der Einstiegspunkt</a></li>
+    <li><a class="step-link" href="#step4">4. AppModule &amp; Datenbankanbindung</a></li>
+  </ul>
+
+  <div class="group-title">Teil 2 — Datenmodell</div>
+  <ul>
+    <li><a class="step-link" href="#step5">5. Was ist eine Entity/ORM?</a></li>
+    <li><a class="step-link" href="#step6">6. Trainer &amp; PokemonEntry</a></li>
+    <li><a class="step-link" href="#step7">7. TournamentRule &amp; Violation</a></li>
+  </ul>
+
+  <div class="group-title">Teil 3 — Business-Logik zuerst</div>
+  <ul>
+    <li><a class="step-link" href="#step8">8. RuleEngineService (reine Logik)</a></li>
+    <li><a class="step-link" href="#step9">9. Der erste Test (Jest-Grundlagen)</a></li>
+  </ul>
+
+  <div class="group-title">Teil 4 — API-Schicht</div>
+  <ul>
+    <li><a class="step-link" href="#step10">10. Repository, Service, Controller</a></li>
+    <li><a class="step-link" href="#step11">11. Ein Modul komplett verkabeln</a></li>
+  </ul>
+
+  <div class="group-title">Teil 5 — Der Orchestrator</div>
+  <ul>
+    <li><a class="step-link" href="#step12">12. ComplianceService &amp; Transaktionen</a></li>
+    <li><a class="step-link" href="#step13">13. Ports &amp; Adapters (Pub/Sub-Simulation)</a></li>
+    <li><a class="step-link" href="#step14">14. Seed-Daten &amp; Lifecycle-Hooks</a></li>
+  </ul>
+
+  <div class="group-title">Teil 6 — Backend live testen</div>
+  <ul>
+    <li><a class="step-link" href="#step15">15. Backend starten &amp; per curl testen</a></li>
+    <li><a class="step-link" href="#step16">16. ComplianceService-Test (Mocking)</a></li>
+  </ul>
+
+  <div class="group-title">Teil 7 — Frontend-Fundament</div>
+  <ul>
+    <li><a class="step-link" href="#step17">17. Warum Angular &amp; Standalone Components</a></li>
+    <li><a class="step-link" href="#step18">18. bootstrapApplication &amp; Routing</a></li>
+    <li><a class="step-link" href="#step19">19. Models &amp; ApiService</a></li>
+  </ul>
+
+  <div class="group-title">Teil 8 — UI zusammenbauen</div>
+  <ul>
+    <li><a class="step-link" href="#step20">20. Signals verstehen</a></li>
+    <li><a class="step-link" href="#step21">21. RosterCheckComponent im Detail</a></li>
+    <li><a class="step-link" href="#step22">22. ViolationListComponent &amp; Pipes</a></li>
+    <li><a class="step-link" href="#step23">23. Frontend starten &amp; ausprobieren</a></li>
+  </ul>
+
+  <div class="group-title">Teil 9 — Testing-Ökosystem</div>
+  <ul>
+    <li><a class="step-link" href="#step24">24. Warum Jest UND Cypress?</a></li>
+    <li><a class="step-link" href="#step25">25. Der Cypress-Test im Detail</a></li>
+  </ul>
+
+  <div class="group-title">Teil 10 — CI/CD</div>
+  <ul>
+    <li><a class="step-link" href="#step26">26. Warum CI/CD überhaupt?</a></li>
+    <li><a class="step-link" href="#step27">27. ci.yml Zeile für Zeile</a></li>
+    <li><a class="step-link" href="#step28">28. Jenkinsfile im Vergleich</a></li>
+  </ul>
+
+  <div class="group-title">Abschluss</div>
+  <ul>
+    <li><a href="#full-picture">Der komplette Kreislauf</a></li>
+    <li><a href="#next">Wie geht's weiter?</a></li>
+  </ul>
+</nav>
+
+<main>
+
+<header class="hero">
+  <h1>Tutorial: Pokémon Compliance Center von Grund auf verstehen</h1>
+  <p class="lead">
+    Dieses Tutorial geht jede Datei im Projekt durch, in der Reihenfolge, in der man sie beim echten Bauen
+    anlegen würde — und erklärt bei jedem Schritt <strong>warum</strong> er nötig ist, nicht nur <strong>was</strong>
+    der Code tut. Du brauchst kein Vorwissen zu NestJS, TypeORM, Angular Signals, Cypress oder CI/CD-Pipelines —
+    jedes Konzept wird eingeführt, sobald es zum ersten Mal gebraucht wird.
+  </p>
+</header>
+
+<section id="howto">
+  <h2>Wie dieses Tutorial funktioniert</h2>
+  <p>
+    Öffne parallel dazu das Projekt in WebStorm (oder deinem Editor). Jeder Schritt nennt oben den genauen
+    Dateipfad — öffne die Datei dort und lies mit. Der Code in diesem Tutorial ist identisch mit dem, was schon in
+    deinem Projekt liegt; du musst nichts abtippen, es sei denn du willst es zur Übung nachbauen.
+  </p>
+  <div class="card why">
+    <strong>Das Prinzip hinter jedem Schritt:</strong> Ich beantworte immer drei Fragen, bevor Code gezeigt wird:
+    Welches Problem löst dieser Baustein? Was würde ohne ihn schiefgehen? Und warum genau an dieser Stelle im
+    Ablauf, nicht früher oder später? Das ist derselbe Dreiklang, den du im Interview für den
+    "Architectural Design Proposal"-Schritt brauchst.
+  </div>
+  <div class="card warn">
+    <strong>Reihenfolge ist bewusst gewählt:</strong> Wir bauen von innen nach außen — zuerst das Datenmodell,
+    dann die reine Business-Logik (ohne Datenbank!), dann die API-Schicht drumherum, dann das Frontend, zuletzt
+    Tests/CI. Das ist keine willkürliche Reihenfolge: Es ist die Reihenfolge, die geringste Abhängigkeiten zuerst
+    baut, sodass jeder Schritt isoliert verständlich und testbar ist, bevor der nächste draufkommt.
+  </div>
+</section>
+
+<section id="big-picture">
+  <h2>Die große Vogelperspektive</h2>
+  <p>
+    Bevor wir in Dateien eintauchen: Dieses Projekt besteht aus zwei komplett getrennten Programmen, die nur über
+    HTTP miteinander reden — genau wie in der echten Stellenausschreibung.
+  </p>
+  <table>
+    <tr><th>Teil</th><th>Rolle</th><th>Läuft auf</th></tr>
+    <tr><td><code>backend/</code></td><td>NestJS-API: hält die Daten, prüft die Business-Regeln, ist die "Wahrheit" des Systems</td><td>http://localhost:3000</td></tr>
+    <tr><td><code>frontend/</code></td><td>Angular-App: zeigt Daten an, schickt Nutzereingaben als HTTP-Requests ans Backend</td><td>http://localhost:4200</td></tr>
+  </table>
+  <p>
+    Warum getrennt und nicht eine einzige Anwendung? Weil so beide unabhängig skalieren, deployen und getestet
+    werden können — das Frontend könnte theoretisch auch eine mobile App sein, ohne dass sich am Backend etwas
+    ändert. Das ist auch der Grund, warum <code>main.ts</code> im Backend <code>cors: true</code> setzt (dazu
+    gleich mehr) — zwei getrennte "Origins" im Browser-Sinn müssen sich explizit die Erlaubnis geben, miteinander
+    zu reden.
+  </p>
+</section>
+
+<section id="step1">
+  <h2><span class="step-badge">Schritt 1</span>Warum NestJS &amp; Dependency Injection</h2>
+  <p>
+    Bevor wir Code sehen, die wichtigste Denkweise, ohne die der ganze Rest des Backends wie willkürliche Magie
+    wirkt: <strong>Dependency Injection (DI)</strong>.
+  </p>
+  <h3>Das Problem, das DI löst</h3>
+  <p>
+    Stell dir vor, du schreibst einen <code>ComplianceService</code>, der Daten aus der Datenbank braucht. Ohne
+    DI würdest du im Service selbst schreiben: <code>const repo = new Repository(...)</code>. Problem: Jetzt ist
+    der Service fest ("hart") mit einer konkreten Datenbank-Verbindung verdrahtet. Willst du ihn in einem Test
+    ohne echte Datenbank ausführen (wie wir es in Schritt 16 tun), hast du keine Möglichkeit, diese Verbindung
+    durch eine Fake-Version zu ersetzen — sie steckt fest im Code.
+  </p>
+  <h3>Die Lösung</h3>
+  <p>
+    Bei DI bittet eine Klasse nur <em>darum</em>, etwas zu bekommen ("ich brauche irgendein Ding, das sich wie ein
+    Trainer-Repository verhält"), baut es aber nicht selbst. Ein zentraler "Container" (bei NestJS: der
+    <strong>IoC-Container</strong>, IoC = Inversion of Control) entscheidet zur Laufzeit, welche konkrete Instanz
+    geliefert wird. Für den echten Betrieb ist das die echte Datenbank-Anbindung; für einen Test kann es ein
+    simples Mock-Objekt sein — der Service selbst merkt den Unterschied nicht.
+  </p>
+  <pre><code>// OHNE DI (schlecht - fest verdrahtet):
+class ComplianceService {
+  private repo = new TrainerRepository(realDatabaseConnection); // fest einprogrammiert
+}
+
+// MIT DI (NestJS-Stil - der Container entscheidet):
+@Injectable()
+class ComplianceService {
+  constructor(@InjectRepository(Trainer) private repo: Repository&lt;Trainer&gt;) {}
+  // "Ich brauche ein Repository für Trainer" - WIE das beschafft wird, ist nicht meine Sache
+}</code></pre>
+  <div class="card why">
+    <strong>Warum das der allererste Schritt ist:</strong> Jede einzelne Datei im Backend, die du gleich siehst
+    (<code>@Injectable()</code>, <code>@Controller()</code>, Konstruktor-Parameter mit Typen) ist Syntax rund um
+    genau dieses eine Prinzip. Wenn du DI einmal verstanden hast, ist der Rest von NestJS "nur" Vokabular.
+  </div>
+  <h3>Warum NestJS und nicht plain Express?</h3>
+  <p>
+    Express (die Grundlage, auf der NestJS standardmäßig läuft) gibt dir keine Struktur vor — jedes Team baut
+    Ordner/Schichten anders. NestJS erzwingt eine Struktur (Module, Controller, Provider) und bringt DI, Decorators
+    und Testing-Utilities eingebaut mit. Für ein Enterprise-Projekt mit vielen Entwicklern und langer Laufzeit
+    (wie die Cloud-Plattform aus deiner Ausschreibung) ist erzwungene Konsistenz mehr wert als die Freiheit, die
+    Express bietet.
+  </p>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step2">
+  <h2><span class="step-badge">Schritt 2</span>package.json lesen lernen</h2>
+  <div class="filepath">backend/package.json</div>
+  <p>
+    Bevor wir Anwendungscode anfassen: <code>package.json</code> ist die "Stückliste" eines Node.js-Projekts. Sie
+    beantwortet zwei Fragen: Welche fremden Code-Bausteine (Packages) braucht diese Anwendung, und mit welchen
+    Kommandos startet man sie?
+  </p>
+  <table>
+    <tr><th>Abschnitt</th><th>Bedeutung</th></tr>
+    <tr><td><code>dependencies</code></td><td>Wird zur <em>Laufzeit</em> gebraucht (z. B. <code>@nestjs/core</code> — ohne das läuft die App nicht)</td></tr>
+    <tr><td><code>devDependencies</code></td><td>Wird nur <em>während der Entwicklung</em> gebraucht (z. B. <code>jest</code> zum Testen, <code>typescript</code> zum Kompilieren) — landet nicht im Produktions-Build</td></tr>
+    <tr><td><code>scripts</code></td><td>Abkürzungen für Kommandozeilenbefehle, aufgerufen mit <code>npm run &lt;name&gt;</code></td></tr>
+  </table>
+  <p>
+    Wenn du gleich <code>npm install</code> ausführst, liest npm genau diese Datei, lädt jedes genannte Package
+    (und deren eigene Abhängigkeiten, daher die vielen hundert Ordner in <code>node_modules</code>) aus dem
+    npm-Registry herunter.
+  </p>
+  <div class="card why">
+    <strong>Warum <code>better-sqlite3</code> statt einer "echten" Datenbank?</strong> Für dieses Lernprojekt
+    wollen wir keine Zeit mit Datenbank-Setup verlieren. SQLite läuft komplett ohne Server, direkt im
+    Arbeitsspeicher der Anwendung. In der echten Stellenausschreibung wäre das SAP HANA — der Umstieg wäre später
+    nur ein anderer <code>type</code> in der TypeORM-Konfiguration (Schritt 4), der Rest des Codes bliebe gleich.
+    Genau das ist der Sinn eines ORMs (siehe Schritt 5).
+  </div>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step3">
+  <h2><span class="step-badge">Schritt 3</span>main.ts — der Einstiegspunkt</h2>
+  <div class="filepath">backend/src/main.ts</div>
+  <pre><code>import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule, { cors: true });
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  await app.listen(3000);
+}
+bootstrap();</code></pre>
+  <p>
+    Das ist die allererste Zeile Code, die ausgeführt wird, wenn du <code>npm run start:dev</code> tippst. Vier
+    Dinge passieren hier, jedes aus einem konkreten Grund:
+  </p>
+  <table>
+    <tr><th>Zeile</th><th>Was</th><th>Warum</th></tr>
+    <tr><td><code>NestFactory.create(AppModule)</code></td><td>Baut den kompletten DI-Container aus <code>AppModule</code> auf</td><td>Alles, was die App braucht, hängt letztlich an diesem einen Wurzel-Modul (siehe Schritt 4)</td></tr>
+    <tr><td><code>{ cors: true }</code></td><td>Erlaubt Requests von anderen Origins (z. B. <code>localhost:4200</code>)</td><td>Ohne das würde der Browser Requests vom Angular-Frontend blockieren — Sicherheitsmechanismus der Browser, nicht von NestJS</td></tr>
+    <tr><td><code>ValidationPipe</code></td><td>Prüft automatisch jeden eingehenden Request-Body gegen die Regeln, die wir gleich in DTOs definieren (siehe <code>CheckRosterDto</code> in Schritt 10)</td><td>Verhindert, dass fehlerhafte/böswillige Daten überhaupt bis in deine Business-Logik vordringen — "Shift-Left" für Datenqualität</td></tr>
+    <tr><td><code>app.listen(3000)</code></td><td>Startet den HTTP-Server auf Port 3000</td><td>Ab hier kann das Frontend (oder <code>curl</code>) Requests schicken</td></tr>
+  </table>
+  <div class="card pitfall">
+    <strong>Häufiger Anfängerfehler:</strong> <code>whitelist: true</code> in der ValidationPipe bedeutet: Felder,
+    die NICHT im DTO definiert sind, werden aus dem Request-Body automatisch entfernt statt einen Fehler zu
+    werfen. Das ist Absicht (verhindert versehentliches "Massenzuweisen" unerwarteter Felder), verwirrt aber, wenn
+    du dich fragst, warum ein zusätzliches Feld einfach "verschwindet" statt einen Fehler zu zeigen.
+  </div>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step4">
+  <h2><span class="step-badge">Schritt 4</span>AppModule &amp; Datenbankanbindung</h2>
+  <div class="filepath">backend/src/app.module.ts</div>
+  <pre><code>@Module({
+  imports: [
+    TypeOrmModule.forRoot({
+      type: 'better-sqlite3',
+      database: ':memory:',
+      entities: [Trainer, PokemonEntry, TournamentRule, Violation],
+      synchronize: true,
+    }),
+    TrainersModule,
+    RulesModule,
+    ViolationsModule,
+    ComplianceModule,
+    EventsModule,
+    SeedModule,
+  ],
+})
+export class AppModule {}</code></pre>
+  <p>
+    Das <strong>Wurzelmodul</strong> der Anwendung. Ein NestJS-<code>@Module</code> ist im Kern nur eine Liste:
+    "Diese anderen Module gehören zu mir (<code>imports</code>), diese Klassen kann man von außen bei mir
+    anfragen (<code>providers</code>/<code>controllers</code>), und das hier gebe ich nach außen weiter
+    (<code>exports</code>)." <code>AppModule</code> importiert alle Feature-Module (Trainers, Rules, ...) — das
+    ist die Stelle, an der aus vielen kleinen, unabhängigen Bausteinen eine einzige Anwendung wird.
+  </p>
+  <div class="card why">
+    <strong>Warum <code>TypeOrmModule.forRoot()</code> genau hier?</strong> Die Datenbankverbindung ist eine
+    globale Ressource, die viele Module brauchen (Trainers, Rules, Violations, Compliance greifen alle auf
+    Entities zu). Sie gehört deshalb ins Wurzelmodul, nicht in ein einzelnes Feature-Modul — sonst müsste jedes
+    Feature-Modul seine eigene Verbindung aufbauen.
+  </div>
+  <div class="card warn">
+    <strong><code>synchronize: true</code> — nur zum Lernen!</strong> Diese Option lässt TypeORM das
+    Datenbankschema automatisch aus den Entities ableiten und bei jedem Start neu erzeugen. Praktisch zum Lernen
+    (kein manuelles Schema-Management nötig), aber in echten Projekten mit persistenter Datenbank gefährlich: Es
+    könnte unkontrolliert Spalten löschen/ändern. In Produktion nutzt man stattdessen versionierte
+    <strong>Migrations</strong> (siehe Kapitel "TypeORM" im Interview-Guide) — bewusster, nachvollziehbarer,
+    reviewbar.
+  </div>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step5">
+  <h2><span class="step-badge">Schritt 5</span>Was ist eine Entity/ein ORM?</h2>
+  <p>
+    Bevor wir die erste Entity-Datei öffnen: Warum benutzen wir überhaupt TypeORM, statt direkt SQL-Befehle zu
+    schreiben?
+  </p>
+  <h3>Das Problem</h3>
+  <p>
+    Ohne ORM würdest du an vielen Stellen im Code Strings wie
+    <code>"SELECT * FROM trainer WHERE id = ?"</code> schreiben. Das hat drei Probleme: Tippfehler in
+    Tabellen-/Spaltennamen fallen erst zur Laufzeit auf (nicht beim Kompilieren), du musst SQL-Ergebnisse manuell
+    in TypeScript-Objekte umwandeln, und Änderungen am Datenmodell (neue Spalte) erfordern, jede betroffene
+    SQL-Stelle im ganzen Projekt manuell zu finden.
+  </p>
+  <h3>Die Lösung: ORM (Object-Relational Mapping)</h3>
+  <p>
+    Ein ORM wie TypeORM lässt dich das Datenmodell einmal als TypeScript-Klasse beschreiben (eine "Entity") und
+    generiert SQL automatisch daraus. Du schreibst <code>repo.findOne({ where: { id } })</code> statt rohes SQL —
+    typsicher, mit Autovervollständigung in der IDE, und die Entity-Klasse ist die <em>einzige</em> Quelle der
+    Wahrheit für das Datenmodell.
+  </p>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step6">
+  <h2><span class="step-badge">Schritt 6</span>Trainer &amp; PokemonEntry</h2>
+  <div class="filepath">backend/src/trainers/trainer.entity.ts</div>
+  <pre><code>@Entity()
+export class Trainer {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  name: string;
+
+  @Column({ nullable: true })
+  region?: string;
+
+  @OneToMany(() =&gt; PokemonEntry, (entry) =&gt; entry.trainer, { cascade: true })
+  roster: PokemonEntry[];
+}</code></pre>
+  <p>
+    <code>@Entity()</code> markiert die Klasse als "das hier wird eine Datenbanktabelle". Jedes
+    <code>@Column()</code> wird eine Spalte. <code>@PrimaryGeneratedColumn('uuid')</code> erzeugt automatisch eine
+    eindeutige ID beim Anlegen (eine UUID statt einer simplen Zahl — verhindert, dass sich jemand von außen einfach
+    IDs "erraten" kann, z. B. <code>id=1</code>, <code>id=2</code>).
+  </p>
+  <p>
+    <code>@OneToMany</code> beschreibt eine <strong>Beziehung</strong>: ein Trainer hat viele
+    <code>PokemonEntry</code>-Einträge (sein Team/Roster). Das ist die Objekt-Sicht auf das, was in relationalen
+    Datenbanken über einen Fremdschlüssel gelöst wird.
+  </p>
+
+  <div class="filepath">backend/src/trainers/pokemon-entry.entity.ts</div>
+  <pre><code>@Entity()
+export class PokemonEntry {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column()
+  speciesName: string;
+
+  @Column()
+  level: number;
+
+  @Column({ default: false })
+  isLegendary: boolean;
+
+  @Column({ nullable: true })
+  heldItem?: string;
+
+  @ManyToOne(() =&gt; Trainer, (trainer) =&gt; trainer.roster, { onDelete: 'CASCADE' })
+  trainer: Trainer;
+
+  @Column()
+  trainerId: string;
+}</code></pre>
+  <p>
+    Die Gegenseite der Beziehung: <code>@ManyToOne</code> — viele <code>PokemonEntry</code>-Zeilen gehören zu
+    <em>einem</em> Trainer. <code>trainerId</code> ist der tatsächliche Fremdschlüssel in der Datenbank;
+    <code>trainer</code> ist die bequeme Objekt-Referenz, die TypeORM automatisch aus diesem Fremdschlüssel
+    auflöst, wenn du danach fragst (siehe <code>relations: ['roster']</code> in Schritt 10).
+  </p>
+  <div class="card why">
+    <strong>Warum <code>onDelete: 'CASCADE'</code>?</strong> Wenn ein Trainer gelöscht wird, sollen seine
+    Pokémon-Einträge nicht als "Datenleichen" ohne gültigen Trainer zurückbleiben — die Datenbank löscht sie
+    automatisch mit. Das ist eine Entscheidung, die du in Stage&nbsp;1 deines Architektur-Vorschlags (siehe
+    <code>EXERCISE.md</code>) bewusst treffen und begründen solltest, nicht einfach dem Default überlassen.
+  </div>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step7">
+  <h2><span class="step-badge">Schritt 7</span>TournamentRule &amp; Violation</h2>
+  <div class="filepath">backend/src/rules/tournament-rule.entity.ts</div>
+  <p>
+    Diese Entity beschreibt eine Turnier-Regel: ein optionales Level-Limit, eine optionale Höchstzahl an
+    legendären Pokémon, eine Liste verbotener Items. Beachte: alle Felder außer <code>name</code>/<code>description</code>
+    sind <code>nullable</code> bzw. haben einen Default — eine Regel muss nicht alle Aspekte gleichzeitig prüfen.
+    Das <code>noDuplicateSpecies</code>-Feld existiert schon (Default <code>false</code>), wird aber aktuell von
+    keiner Logik ausgewertet — das ist die Übungsaufgabe aus <code>EXERCISE.md</code>, die du nach diesem Tutorial
+    angehst.
+  </p>
+
+  <div class="filepath">backend/src/violations/violation.entity.ts</div>
+  <pre><code>export enum ViolationSeverity {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+}
+
+@Entity()
+export class Violation {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @ManyToOne(() =&gt; Trainer, { onDelete: 'CASCADE' })
+  trainer: Trainer;
+
+  @Column() trainerId: string;
+  @Column() ruleId: string;
+  @Column() ruleName: string;
+
+  @Column({ type: 'simple-enum', enum: ViolationSeverity })
+  severity: ViolationSeverity;
+
+  @Column() details: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+}</code></pre>
+  <p>
+    Ein <code>enum</code> (Aufzählungstyp) statt eines einfachen <code>string</code>-Felds für
+    <code>severity</code> stellt sicher, dass in der Datenbank niemals ein Tippfehler wie
+    <code>"HIHG"</code> landet — TypeScript lässt zur Kompilierzeit nur die drei definierten Werte zu.
+  </p>
+  <div class="card why">
+    <strong>Warum <code>ruleName</code> zusätzlich zu <code>ruleId</code> speichern (Denormalisierung)?</strong>
+    Eigentlich "unsauber" im klassischen Datenbank-Sinn (der Name steht ja schon in der <code>TournamentRule</code>-Tabelle).
+    Aber: Regeln könnten sich später ändern oder gelöscht werden — der Audit-Trail (siehe Compliance-Kapitel im
+    Interview-Guide) muss trotzdem zeigen, wie die Regel <em>zum Zeitpunkt des Verstoßes</em> hieß. Das ist ein
+    bewusster Trade-off zwischen Datenbank-Reinheit und Nachvollziehbarkeit — genau die Art Trade-off, die du im
+    Architektur-Vorschlag benennen solltest.
+  </div>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step8">
+  <h2><span class="step-badge">Schritt 8</span>RuleEngineService (reine Logik)</h2>
+  <div class="filepath">backend/src/rules/rule-engine.service.ts</div>
+  <p>
+    Jetzt kommt der wichtigste Baustein des ganzen Projekts — und der am meisten missverstandene Teil bei
+    NestJS-Einsteigern: Dieser Service hat <strong>keinen einzigen Konstruktor-Parameter</strong>, kein
+    <code>@InjectRepository</code>, keine Datenbank-Berührung.
+  </p>
+  <pre><code>@Injectable()
+export class RuleEngineService {
+  checkRoster(roster: PokemonEntry[], rule: TournamentRule): RuleCheckResult[] {
+    const results: RuleCheckResult[] = [];
+
+    if (rule.maxLevel != null) {
+      for (const p of roster) {
+        if (p.level &gt; rule.maxLevel) {
+          results.push({ severity: ViolationSeverity.MEDIUM, details: `${p.speciesName} ...` });
+        }
+      }
+    }
+    // ... weitere Regeln (maxLegendaries, bannedItems) ...
+    return results;
+  }
+}</code></pre>
+  <div class="card why">
+    <strong>Warum absichtlich KEINE Datenbank-Abhängigkeit?</strong> Das ist das Prinzip "Trennung von
+    Business-Logik und Infrastruktur" (auch Hexagonal/Clean Architecture genannt, siehe Interview-Guide Kapitel
+    "Architektur &amp; Vorgehen"). Diese Funktion bekommt fertige Daten <em>hineingereicht</em> (ein Array, ein
+    Regel-Objekt) und gibt fertige Ergebnisse <em>zurück</em> — sie weiß nichts davon, ob diese Daten aus SQLite,
+    HANA oder einem Unit-Test-Fake kommen. Der Effekt: Du kannst diese Logik in Millisekunden testen, ohne
+    Datenbank, ohne HTTP-Server, ohne irgendetwas zu mocken außer den reinen Eingabedaten (siehe Schritt&nbsp;9).
+  </div>
+  <div class="card pitfall">
+    <strong>Der typische Anfängerfehler wäre gewesen:</strong> Diese Prüf-Logik direkt in den
+    <code>ComplianceService</code> zu schreiben (der die Datenbank kennt). Dann könntest du die Regel-Logik nicht
+    mehr isoliert testen, ohne jedes Mal eine Datenbank-Verbindung aufzubauen — Tests würden langsam und
+    umständlich, und genau solche Tests werden in der Praxis oft übersprungen. Kleine Architektur-Entscheidung,
+    großer Effekt auf Testbarkeit.
+  </div>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step9">
+  <h2><span class="step-badge">Schritt 9</span>Der erste Test (Jest-Grundlagen)</h2>
+  <div class="filepath">backend/src/rules/rule-engine.service.spec.ts</div>
+  <p>
+    Warum testen wir <code>RuleEngineService</code> als Allererstes, noch bevor es überhaupt einen HTTP-Endpunkt
+    gibt, der ihn nutzt? Weil er die reinste, am leichtesten isolierbare Logik im ganzen Projekt ist — der
+    ideale Startpunkt, um Testen zu lernen.
+  </p>
+  <h3>Grundvokabular von Jest</h3>
+  <table>
+    <tr><th>Funktion</th><th>Bedeutung</th></tr>
+    <tr><td><code>describe('Name', () =&gt; {...})</code></td><td>Gruppiert zusammengehörige Tests, rein organisatorisch</td></tr>
+    <tr><td><code>it('sollte X tun', () =&gt; {...})</code> (oder <code>test(...)</code>)</td><td>Ein einzelner Testfall</td></tr>
+    <tr><td><code>expect(wert).toBe(erwartet)</code></td><td>Eine "Behauptung" (Assertion) — schlägt der Test fehl, wenn falsch</td></tr>
+  </table>
+  <h3>Das Arrange-Act-Assert-Muster</h3>
+  <pre><code>it('meldet einen Verstoss, wenn ein Pokemon das Level-Limit ueberschreitet', () =&gt; {
+  // ARRANGE: Testdaten vorbereiten
+  const roster = [pokemon({ level: 60, speciesName: 'Charizard' })];
+
+  // ACT: die zu testende Funktion aufrufen
+  const result = service.checkRoster(roster, rule({ maxLevel: 50 }));
+
+  // ASSERT: prüfen, ob das Ergebnis stimmt
+  expect(result).toHaveLength(1);
+  expect(result[0].details).toContain('Charizard');
+});</code></pre>
+  <p>
+    Jeder gute Test folgt dieser Dreiteilung: erst die Ausgangslage herstellen, dann genau EINE Sache tun, dann
+    prüfen. Die kleinen Hilfsfunktionen <code>pokemon(...)</code> und <code>rule(...)</code> oben in der Datei
+    bauen Test-Objekte mit sinnvollen Defaults, damit jeder einzelne Test nur die Felder angeben muss, die für
+    diesen konkreten Fall wichtig sind — das hält Tests lesbar.
+  </p>
+  <div class="card why">
+    <strong>Warum <code>it.skip(...)</code> bei einem der Tests?</strong> Das ist die Übungsaufgabe: Ein Test kann
+    existieren, aber absichtlich übersprungen werden, bis die zugehörige Funktionalität implementiert ist. Das ist
+    ein leichter Einstieg in <strong>testgetriebene Entwicklung (TDD)</strong>: Erst den Test schreiben (der
+    beschreibt, was passieren <em>soll</em>), dann die Implementierung nachziehen, bis er grün wird. Genau das
+    machst du in <code>EXERCISE.md</code> Stage&nbsp;4b.
+  </div>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step10">
+  <h2><span class="step-badge">Schritt 10</span>Repository, Service, Controller</h2>
+  <p>
+    Jetzt bauen wir eine typische "CRUD-Schicht" (Create/Read/Update/Delete) — am Beispiel <code>Trainers</code>.
+    Drei Dateien, drei klar getrennte Aufgaben. Das ist ein Muster, das sich für <code>rules</code> und
+    <code>violations</code> praktisch identisch wiederholt.
+  </p>
+
+  <div class="filepath">backend/src/trainers/trainers.service.ts</div>
+  <pre><code>@Injectable()
+export class TrainersService {
+  constructor(@InjectRepository(Trainer) private readonly repo: Repository&lt;Trainer&gt;) {}
+
+  findAll(): Promise&lt;Trainer[]&gt; {
+    return this.repo.find({ relations: ['roster'] });
+  }
+
+  async findOne(id: string): Promise&lt;Trainer&gt; {
+    const trainer = await this.repo.findOne({ where: { id }, relations: ['roster'] });
+    if (!trainer) throw new NotFoundException(`Trainer ${id} nicht gefunden`);
+    return trainer;
+  }
+}</code></pre>
+  <p>
+    <code>@InjectRepository(Trainer)</code> ist die konkrete NestJS/TypeORM-Umsetzung des DI-Prinzips aus
+    Schritt&nbsp;1: "Gib mir das Repository, das für die <code>Trainer</code>-Entity zuständig ist." Die Option
+    <code>relations: ['roster']</code> sagt TypeORM: "Lade beim Abfragen auch gleich die verknüpften
+    <code>PokemonEntry</code>-Zeilen mit" — sonst bekämst du nur den Trainer ohne sein Team (Stichwort N+1-Problem,
+    siehe Interview-Guide Kapitel "TypeORM").
+  </p>
+  <div class="card why">
+    <strong>Warum wirft <code>findOne</code> selbst eine <code>NotFoundException</code>, statt einfach
+    <code>null</code> zurückzugeben?</strong> Damit sich <em>jeder</em> Aufrufer (Controller, andere Services)
+    nicht wiederholt um den "nicht gefunden"-Fall kümmern muss. NestJS fängt diese Exception automatisch ab und
+    wandelt sie in eine passende HTTP-404-Antwort um — Fehlerbehandlung an einer einzigen Stelle statt überall
+    verstreut.
+  </div>
+
+  <div class="filepath">backend/src/trainers/trainers.controller.ts</div>
+  <pre><code>@Controller('trainers')
+export class TrainersController {
+  constructor(private readonly service: TrainersService) {}
+
+  @Get()
+  findAll() { return this.service.findAll(); }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) { return this.service.findOne(id); }
+}</code></pre>
+  <p>
+    Der Controller ist bewusst "dünn" — er enthält <em>keine</em> Geschäftslogik, sondern übersetzt nur zwischen
+    HTTP (URLs, Methoden, Statuscodes) und dem Service. <code>@Controller('trainers')</code> plus
+    <code>@Get()</code> ergibt die Route <code>GET /trainers</code>; <code>@Get(':id')</code> ergibt
+    <code>GET /trainers/:id</code>, wobei <code>@Param('id')</code> den URL-Platzhalter als Funktionsparameter
+    einspeist.
+  </p>
+  <div class="card why">
+    <strong>Warum Controller und Service überhaupt trennen?</strong> Der Controller kennt HTTP-Details (Routen,
+    Statuscodes), der Service kennt Geschäftslogik/Datenzugriff — <em>Single Responsibility Principle</em>. Der
+    praktische Nutzen: Du könntest dieselbe <code>TrainersService</code>-Logik später auch von einem
+    Pub/Sub-Consumer statt einem HTTP-Controller aus aufrufen, ohne sie zu duplizieren.
+  </div>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step11">
+  <h2><span class="step-badge">Schritt 11</span>Ein Modul komplett verkabeln</h2>
+  <div class="filepath">backend/src/trainers/trainers.module.ts</div>
+  <pre><code>@Module({
+  imports: [TypeOrmModule.forFeature([Trainer, PokemonEntry])],
+  controllers: [TrainersController],
+  providers: [TrainersService],
+  exports: [TrainersService],
+})
+export class TrainersModule {}</code></pre>
+  <p>
+    Das ist oft die verwirrendste Stelle für NestJS-Einsteiger — hier die Bedeutung jedes Feldes einzeln:
+  </p>
+  <table>
+    <tr><th>Feld</th><th>Bedeutung</th></tr>
+    <tr><td><code>imports</code></td><td>Was dieses Modul von außen braucht. <code>TypeOrmModule.forFeature([...])</code> registriert genau die Entities, für die dieses Modul Repositories per <code>@InjectRepository</code> anfragen darf</td></tr>
+    <tr><td><code>controllers</code></td><td>Welche HTTP-Routen dieses Modul nach außen anbietet</td></tr>
+    <tr><td><code>providers</code></td><td>Welche injizierbaren Klassen (Services) innerhalb dieses Moduls existieren</td></tr>
+    <tr><td><code>exports</code></td><td>Welche dieser Provider auch <em>andere</em> Module nutzen dürfen, wenn sie dieses Modul importieren</td></tr>
+  </table>
+  <div class="card why">
+    <strong>Warum <code>exports: [TrainersService]</code>?</strong> Schau voraus zu Schritt&nbsp;12: Der
+    <code>ComplianceService</code> braucht Zugriff auf Trainer-Daten. Ohne den Export wäre
+    <code>TrainersService</code> ein rein internes Detail von <code>TrainersModule</code>, das kein anderes Modul
+    sehen könnte — bewusste Kapselung, wie <code>private</code> in objektorientierten Sprachen, nur auf
+    Modul-Ebene.
+  </div>
+  <p>
+    <code>rules.module.ts</code> und <code>violations.module.ts</code> folgen exakt demselben Muster — schau sie
+    dir kurz an, du wirst die Struktur sofort wiedererkennen. Der einzige Unterschied bei <code>rules.module.ts</code>:
+    es registriert zusätzlich <code>RuleEngineService</code> als Provider (den reinen Logik-Baustein aus
+    Schritt&nbsp;8) und exportiert ihn ebenfalls, weil <code>ComplianceService</code> ihn gleich braucht.
+  </p>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step12">
+  <h2><span class="step-badge">Schritt 12</span>ComplianceService &amp; Transaktionen</h2>
+  <div class="filepath">backend/src/compliance/compliance.service.ts</div>
+  <p>
+    Jetzt kommt das Herzstück: der Service, der alles bisher Gebaute zusammenführt. Er lädt einen Trainer und eine
+    Regel, lässt <code>RuleEngineService</code> (Schritt&nbsp;8) die reine Prüfung durchführen, speichert das
+    Ergebnis — und das alles <strong>transaktional</strong>.
+  </p>
+  <pre><code>const savedViolations = await this.dataSource.transaction(async (manager) =&gt; {
+  const violations = findings.map((finding) =&gt;
+    manager.create(Violation, { trainerId: trainer.id, ruleId: rule.id, ...finding }),
+  );
+  return violations.length ? manager.save(Violation, violations) : [];
+});</code></pre>
+  <h3>Was ist eine Transaktion und warum brauchen wir sie hier?</h3>
+  <p>
+    Eine Transaktion garantiert: entweder werden <em>alle</em> Änderungen darin gespeichert, oder <em>keine</em> —
+    nie ein halb fertiger Zustand. Stell dir vor, ein Team hat 3 Regelverstöße gleichzeitig. Ohne Transaktion
+    könnte theoretisch Violation&nbsp;1 gespeichert werden, dann würde die Anwendung abstürzen (Stromausfall,
+    Netzwerkfehler, Bug), und Violation&nbsp;2+3 fehlen — dein Compliance-System würde einen unvollständigen,
+    irreführenden Zustand zeigen. Bei einem Compliance-Feature ist das nicht nur ein technischer Fehler, sondern
+    ein Vertrauensproblem: Die Daten müssen konsistent sein, damit ein Audit ihnen glauben kann.
+  </p>
+  <div class="card why">
+    <strong>Warum wird das Publizieren des Events (Schritt&nbsp;13) NICHT Teil derselben Transaktion?</strong>
+    Schau dir den Code genau an: <code>this.publisher.publish(...)</code> steht <em>außerhalb</em> des
+    <code>transaction(...)</code>-Blocks. Das ist Absicht: Eine Datenbank-Transaktion kann man zurückrollen, einen
+    bereits an ein Pub/Sub-System gesendeten Event-Aufruf nicht. Würden wir das Publizieren in die Transaktion
+    packen und die Transaktion würde später fehlschlagen, hätten wir ein Event über etwas verschickt, das gar
+    nicht passiert ist. Deshalb: erst sicher speichern, <em>dann</em> informieren.
+  </div>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step13">
+  <h2><span class="step-badge">Schritt 13</span>Ports &amp; Adapters (Pub/Sub-Simulation)</h2>
+  <div class="filepath">backend/src/events/publisher.port.ts</div>
+  <pre><code>export interface PublisherPort {
+  publish(topic: string, payload: Record&lt;string, unknown&gt;): Promise&lt;void&gt;;
+}
+export const PUBLISHER_PORT = Symbol('PUBLISHER_PORT');</code></pre>
+  <h3>Das Problem</h3>
+  <p>
+    Die Ausschreibung nennt GCP Pub/Sub als echten Event-Transport. Aber: Für dieses Lernprojekt willst du weder
+    ein GCP-Konto einrichten noch beim Testen echte Netzwerk-Aufrufe machen. Trotzdem willst du das
+    <em>Muster</em> — "wenn etwas Wichtiges passiert, informiere andere Systeme, ohne sie zu kennen" — schon
+    jetzt richtig anlegen.
+  </p>
+  <h3>Die Lösung: ein Interface (Port) plus austauschbare Implementierung (Adapter)</h3>
+  <p>
+    <code>PublisherPort</code> beschreibt nur <em>was</em> möglich sein muss ("etwas auf einem Topic
+    publizieren"), nicht <em>wie</em>. <code>ComplianceService</code> kennt nur dieses Interface (siehe
+    <code>@Inject(PUBLISHER_PORT)</code> im Konstruktor), nicht die konkrete Implementierung.
+  </p>
+  <div class="filepath">backend/src/events/in-memory-publisher.adapter.ts</div>
+  <pre><code>@Injectable()
+export class InMemoryPublisherAdapter implements PublisherPort {
+  async publish(topic: string, payload: Record&lt;string, unknown&gt;): Promise&lt;void&gt; {
+    this.logger.log(`Event publiziert auf "${topic}": ${JSON.stringify(payload)}`);
+    this.recent.unshift({ topic, payload, publishedAt: new Date() });
+  }
+}</code></pre>
+  <p>
+    Lokal "publiziert" dieser Adapter nur in eine Liste im Arbeitsspeicher (abrufbar über
+    <code>GET /events/recent</code>). In der echten Plattform gäbe es eine zweite Klasse,
+    <code>GcpPubSubPublisherAdapter</code>, die intern den <code>@google-cloud/pubsub</code>-Client nutzt — mit
+    identischer <code>publish()</code>-Signatur. <code>ComplianceService</code> müsste dafür <strong>keine
+    einzige Zeile</strong> ändern.
+  </p>
+  <div class="filepath">backend/src/events/events.module.ts</div>
+  <pre><code>providers: [
+  InMemoryPublisherAdapter,
+  { provide: PUBLISHER_PORT, useExisting: InMemoryPublisherAdapter },
+],</code></pre>
+  <div class="card why">
+    <strong>Warum ein <code>Symbol</code> als Token (<code>PUBLISHER_PORT</code>) statt einfach die Klasse zu
+    injizieren?</strong> TypeScript-Interfaces existieren nur zur Kompilierzeit — zur Laufzeit "verschwinden" sie
+    komplett (siehe auch Interview-Guide Kapitel "TypeScript"). Der DI-Container von NestJS braucht aber zur
+    Laufzeit einen konkreten Schlüssel, um nachzuschlagen, was er liefern soll. Ein <code>Symbol</code> ist ein
+    garantiert eindeutiger, laufzeitfähiger Ersatz für "das Interface <code>PublisherPort</code>". Das
+    <code>useExisting</code> sagt: "wenn nach <code>PUBLISHER_PORT</code> gefragt wird, liefere die bereits
+    existierende <code>InMemoryPublisherAdapter</code>-Instanz."
+  </div>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step14">
+  <h2><span class="step-badge">Schritt 14</span>Seed-Daten &amp; Lifecycle-Hooks</h2>
+  <div class="filepath">backend/src/seed/seed.service.ts</div>
+  <pre><code>@Injectable()
+export class SeedService implements OnModuleInit {
+  async onModuleInit() {
+    const existing = await this.trainerRepo.count();
+    if (existing &gt; 0) return;
+    // ... Trainer, Rosters und Regeln anlegen ...
+  }
+}</code></pre>
+  <p>
+    <code>OnModuleInit</code> ist ein <strong>Lifecycle-Hook</strong>: NestJS ruft <code>onModuleInit()</code>
+    automatisch auf, sobald alle Abhängigkeiten des Moduls aufgebaut sind, aber bevor die App tatsächlich
+    Requests annimmt. Perfekt für einmalige Initialisierungsarbeit wie Testdaten.
+  </p>
+  <div class="card why">
+    <strong>Warum Seed-Daten statt jedes Mal manuell Trainer anzulegen?</strong> Ohne Seed müsstest du nach jedem
+    Neustart (und da wir <code>:memory:</code> als Datenbank nutzen, ist nach jedem Neustart alles leer!) erst
+    mühsam per <code>curl</code> Testdaten anlegen, bevor du irgendetwas ausprobieren kannst. Die
+    <code>existing &gt; 0</code>-Prüfung verhindert außerdem doppelte Seed-Daten, falls das Modul aus irgendeinem
+    Grund zweimal initialisiert würde.
+  </div>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step15">
+  <h2><span class="step-badge">Schritt 15</span>Backend starten &amp; per curl testen</h2>
+  <p>Jetzt wird es praktisch. Im Terminal, im Ordner <code>backend/</code>:</p>
+  <pre><code>npm install
+npm run start:dev</code></pre>
+  <p>
+    <code>start:dev</code> nutzt <code>nest start --watch</code> — die App startet, und bei jeder
+    Datei-Änderung wird sie automatisch neu geladen. Du solltest in der Konsole Zeilen wie
+    <code>Mapped {/trainers, GET} route</code> sehen — das sind die Routen aus Schritt&nbsp;10, die NestJS beim
+    Start entdeckt hat.
+  </p>
+  <p>Öffne ein zweites Terminal und probiere die API aus:</p>
+  <pre><code># Alle Trainer inkl. Roster abrufen
+curl http://localhost:3000/trainers
+
+# Eine Regel gegen ein Roster pruefen (ID aus der vorigen Antwort einsetzen)
+curl -X POST http://localhost:3000/compliance/check \
+  -H "Content-Type: application/json" \
+  -d '{"trainerId":"&lt;ID&gt;","ruleId":"&lt;ID&gt;"}'
+
+# Was waere an Pub/Sub gegangen?
+curl http://localhost:3000/events/recent</code></pre>
+  <div class="card why">
+    <strong>Warum überhaupt manuell mit curl testen, wenn es doch automatisierte Tests gibt?</strong> Das ist
+    genau der "execute manual tests"-Schritt aus deiner Stellenausschreibung. Automatisierte Tests prüfen, was du
+    dir vorher überlegt hast — manuelles Ausprobieren deckt oft Dinge auf, an die du beim Schreiben der Tests gar
+    nicht gedacht hast (z. B.: "was passiert eigentlich, wenn ich eine falsche UUID schicke?"). Probier das ruhig
+    aus und beobachte die Fehlermeldung.
+  </div>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step16">
+  <h2><span class="step-badge">Schritt 16</span>ComplianceService-Test (Mocking)</h2>
+  <div class="filepath">backend/src/compliance/compliance.service.spec.ts</div>
+  <p>
+    Anders als <code>RuleEngineService</code> (Schritt&nbsp;9) hat <code>ComplianceService</code> viele
+    Abhängigkeiten: zwei Repositories, eine <code>DataSource</code> (für Transaktionen), einen Publisher. Wir
+    wollen ihn trotzdem testen, <em>ohne</em> eine echte Datenbank oder einen echten Publisher zu brauchen — das
+    ist der Moment, in dem <strong>Mocking</strong> wichtig wird.
+  </p>
+  <pre><code>const trainerRepo = { findOne: jest.fn() };
+const publisher = { publish: jest.fn() };
+const dataSource = {
+  transaction: jest.fn(async (cb) =&gt; cb({
+    create: (_entity, data) =&gt; data,
+    save: async (_entity, rows) =&gt; rows.map((r, i) =&gt; ({ id: `v${i}`, createdAt: new Date(), ...r })),
+  })),
+};
+
+// Im Test-Modul werden diese Fakes statt der echten Klassen registriert:
+{ provide: getRepositoryToken(Trainer), useValue: trainerRepo },
+{ provide: DataSource, useValue: dataSource },
+{ provide: PUBLISHER_PORT, useValue: publisher },</code></pre>
+  <p>
+    <code>jest.fn()</code> erzeugt eine "Attrappe" einer Funktion: Sie tut standardmäßig nichts, aber Jest merkt
+    sich jeden Aufruf. So kannst du später prüfen: <code>expect(publisher.publish).toHaveBeenCalledWith(...)</code> —
+    "wurde <code>publish</code> mit genau diesen Daten aufgerufen?", ohne dass wirklich etwas irgendwohin gesendet
+    wurde.
+  </p>
+  <div class="card why">
+    <strong>Warum <code>DataSource</code> hier so aufwendig gefaked wird (statt einer echten SQLite-Testdatenbank)?</strong>
+    Zwei Gründe: Erstens Geschwindigkeit — dieser Test läuft in Millisekunden statt Zehntelsekunden, weil keine
+    echte Datenbank-Engine involviert ist. Zweitens Fokus — dieser Test soll die <em>Orchestrierungs-Logik</em>
+    von <code>ComplianceService</code> prüfen (ruft er die richtigen Dinge in der richtigen Reihenfolge auf?),
+    nicht ob TypeORM korrekt SQL generiert — das ist nicht seine Aufgabe, das würde <code>RuleEngineService</code>
+    bzw. TypeORM selbst betreffen. Ein Test sollte immer nur EINE Sache prüfen.
+  </div>
+  <p>
+    Führe <code>npm run test</code> im <code>backend/</code>-Ordner aus und beobachte, wie beide Test-Dateien
+    (<code>rule-engine.service.spec.ts</code> und <code>compliance.service.spec.ts</code>) zusammen laufen —
+    zusammen bilden sie die "Unit-Test-Ebene" deiner künftigen Testpyramide (siehe Schritt&nbsp;24).
+  </p>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step17">
+  <h2><span class="step-badge">Schritt 17</span>Warum Angular &amp; Standalone Components</h2>
+  <p>
+    Das Backend liefert jetzt Daten über HTTP. Zeit für die Oberfläche. Kurzer Blick auf die grundsätzliche Frage:
+    Warum überhaupt ein Framework wie Angular, statt HTML mit ein bisschen JavaScript zu schreiben?
+  </p>
+  <p>
+    Sobald eine Oberfläche mehr als ein paar statische Elemente hat — Zustand (welcher Trainer ist ausgewählt?),
+    Reaktion auf Nutzereingaben, Kommunikation mit einem Backend — wird "von Hand" schnell unübersichtlich.
+    Angular gibt dir eine Struktur (Komponenten, Services, Dependency Injection — ja, dasselbe DI-Prinzip wie im
+    Backend, siehe Schritt&nbsp;1!) und kümmert sich automatisch darum, das DOM (die tatsächlich angezeigte
+    Seite) synchron zu deinem Datenzustand zu halten.
+  </p>
+  <div class="filepath">frontend/src/app/app.component.ts</div>
+  <pre><code>@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  template: `...`,
+})
+export class AppComponent {}</code></pre>
+  <p>
+    <code>standalone: true</code> ist der moderne Angular-Ansatz (seit Angular&nbsp;14, mittlerweile Standard):
+    Eine Komponente importiert direkt, was sie braucht (<code>imports: [...]</code>), statt über ein zentrales
+    <code>NgModule</code> registriert zu werden. Weniger Boilerplate, klarere Abhängigkeiten pro Komponente — du
+    siehst direkt am Komponenten-Code, was sie braucht, statt in einer separaten Modul-Datei suchen zu müssen.
+  </p>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step18">
+  <h2><span class="step-badge">Schritt 18</span>bootstrapApplication &amp; Routing</h2>
+  <div class="filepath">frontend/src/main.ts</div>
+  <pre><code>bootstrapApplication(AppComponent, appConfig).catch((err) =&gt; console.error(err));</code></pre>
+  <p>
+    Das Gegenstück zu <code>NestFactory.create(AppModule)</code> im Backend (Schritt&nbsp;3): der Startpunkt der
+    Anwendung. Statt eines Wurzel-<em>Moduls</em> gibt es hier eine Wurzel-<em>Komponente</em>
+    (<code>AppComponent</code>) plus eine <code>appConfig</code>.
+  </p>
+  <div class="filepath">frontend/src/app/app.config.ts</div>
+  <pre><code>export const appConfig: ApplicationConfig = {
+  providers: [provideRouter(routes), provideHttpClient()],
+};</code></pre>
+  <div class="card why">
+    <strong>Die Parallele zum Backend, die vieles einfacher macht:</strong> <code>providers: [...]</code> hier ist
+    dasselbe Grundprinzip wie <code>providers</code> in einem NestJS-Modul (Schritt&nbsp;11) — "diese Dinge sollen
+    im DI-Container verfügbar sein." <code>provideHttpClient()</code> macht <code>HttpClient</code> überall in der
+    App injizierbar (gebraucht in Schritt&nbsp;19); <code>provideRouter(routes)</code> aktiviert das
+    URL-basierte Routing.
+  </div>
+  <div class="filepath">frontend/src/app/app.routes.ts</div>
+  <pre><code>export const routes: Routes = [
+  { path: '', redirectTo: 'check', pathMatch: 'full' },
+  { path: 'check', component: RosterCheckComponent },
+  { path: 'violations', component: ViolationListComponent },
+];</code></pre>
+  <p>
+    Eine simple Zuordnung: welche URL zeigt welche Komponente. <code>redirectTo</code> sorgt dafür, dass die
+    Startseite (<code>/</code>) direkt zum Roster-Check weiterleitet, statt eine leere Seite zu zeigen.
+  </p>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step19">
+  <h2><span class="step-badge">Schritt 19</span>Models &amp; ApiService</h2>
+  <div class="filepath">frontend/src/app/core/models.ts</div>
+  <p>
+    Diese Datei dupliziert bewusst die Form der Backend-Entities als TypeScript-<code>interface</code>s (kein
+    <code>@Column</code>, keine Decorators — reine Typinformation, es gibt hier keine Datenbank). In größeren
+    Projekten würde man diese Typen oft automatisch aus einer OpenAPI-Spezifikation des Backends generieren,
+    damit Frontend und Backend nie auseinanderlaufen — hier von Hand geschrieben, um das Prinzip klar zu halten.
+  </p>
+  <div class="filepath">frontend/src/app/core/api.service.ts</div>
+  <pre><code>@Injectable({ providedIn: 'root' })
+export class ApiService {
+  private http = inject(HttpClient);
+
+  getTrainers(): Observable&lt;Trainer[]&gt; {
+    return this.http.get&lt;Trainer[]&gt;(`${BASE_URL}/trainers`);
+  }
+
+  checkRoster(trainerId: string, ruleId: string): Observable&lt;ComplianceCheckResult&gt; {
+    return this.http.post&lt;ComplianceCheckResult&gt;(`${BASE_URL}/compliance/check`, { trainerId, ruleId });
+  }
+}</code></pre>
+  <p>
+    <code>inject(HttpClient)</code> ist eine neuere Alternative zu Konstruktor-Injection (funktioniert nur an
+    bestimmten Stellen wie Feldinitialisierern, ist aber bei Standalone-Komponenten/Services sehr verbreitet) —
+    dasselbe DI-Prinzip, nur andere Syntax.
+  </p>
+  <h3>Was ist ein Observable?</h3>
+  <p>
+    <code>HttpClient</code>-Methoden geben kein <code>Promise</code> zurück, sondern ein <code>Observable</code>
+    (aus der Bibliothek RxJS). Der Unterschied: Ein <code>Promise</code> löst sich genau einmal auf. Ein
+    <code>Observable</code> kann mehrfach Werte liefern (z. B. bei WebSockets) und liefert <em>nichts</em>, bis
+    jemand <code>.subscribe(...)</code> aufruft — "faul" statt sofort ausgeführt. Für einen einfachen HTTP-Request
+    wie hier verhält es sich im Alltag sehr ähnlich zu einem Promise; du wirst <code>.subscribe(...)</code> gleich
+    in Schritt&nbsp;21 in Aktion sehen.
+  </p>
+  <div class="card why">
+    <strong>Warum ein zentraler <code>ApiService</code> statt <code>HttpClient</code> direkt in jeder Komponente
+    zu nutzen?</strong> Dieselbe Begründung wie Controller/Service im Backend (Schritt&nbsp;10): Wenn sich die
+    Backend-URL oder das Antwortformat ändert, gibt es genau eine Stelle zum Anpassen. Und Komponenten bleiben
+    einfacher testbar, weil man in Tests nur <code>ApiService</code> faken muss, nicht das komplette
+    HTTP-System.
+  </div>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step20">
+  <h2><span class="step-badge">Schritt 20</span>Signals verstehen</h2>
+  <p>
+    Bevor wir die erste richtige UI-Komponente bauen: Angular Signals sind das neue Reaktivitätsmodell (seit
+    Angular&nbsp;16/17) und werden in beiden Komponenten dieses Projekts genutzt.
+  </p>
+  <h3>Das Problem, das Signals lösen</h3>
+  <p>
+    Wenn sich Daten ändern (z. B. die Liste der Trainer wurde vom Backend geladen), muss die angezeigte Seite
+    automatisch mit-aktualisiert werden — ohne dass du manuell "DOM neu zeichnen" aufrufst. Früher löste Angular
+    das über Zone.js (ein Mechanismus, der praktisch jede asynchrone Operation im Browser abfängt und danach
+    <em>die gesamte Komponente</em> neu prüft). Signals lösen das feingranularer.
+  </p>
+  <pre><code>trainers = signal&lt;Trainer[]&gt;([]);   // ein reaktiver Wert, Startwert: leeres Array
+
+// Lesen: wie ein Funktionsaufruf
+console.log(this.trainers());
+
+// Schreiben: komplett ersetzen
+this.trainers.set(neueListe);
+
+// Schreiben: basierend auf altem Wert
+this.trainers.update(alte =&gt; [...alte, neuerTrainer]);</code></pre>
+  <div class="card why">
+    <strong>Warum <code>signal()</code> statt einfach eines normalen Klassenfelds (<code>trainers: Trainer[] = []</code>)?</strong>
+    Ein normales Feld ändert sich, aber Angular "merkt" das nicht automatisch — bei der klassischen
+    Zone.js-Strategie wird trotzdem die ganze Komponente neu geprüft (unnötige Arbeit), bei
+    <code>OnPush</code>-Komponenten würde eine reine Feldänderung sogar komplett <em>unbemerkt</em> bleiben. Ein
+    Signal hingegen "weiß", wo genau im Template es benutzt wird, und triggert gezielt nur die nötige
+    Aktualisierung. Für dieses kleine Projekt macht der Performance-Unterschied kaum etwas aus — aber du lernst
+    hier direkt die moderne, zukunftssichere Angular-Schreibweise statt eines auslaufenden Musters.
+  </div>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step21">
+  <h2><span class="step-badge">Schritt 21</span>RosterCheckComponent im Detail</h2>
+  <div class="filepath">frontend/src/app/compliance/roster-check.component.ts</div>
+  <p>Diese Komponente ist der zentrale User-Flow der ganzen App. Gehen wir sie in der Reihenfolge durch, in der sie tatsächlich abläuft.</p>
+
+  <h4>1. Zustand definieren</h4>
+  <pre><code>trainers = signal&lt;Trainer[]&gt;([]);
+rules = signal&lt;TournamentRule[]&gt;([]);
+result = signal&lt;ComplianceCheckResult | null&gt;(null);
+loading = signal(false);
+selectedTrainerId = '';
+selectedRuleId = '';</code></pre>
+  <p>
+    Vier Signals für Daten, die sich über Zeit ändern und im Template angezeigt werden, plus zwei einfache Felder
+    für die aktuelle Dropdown-Auswahl (die über <code>[(ngModel)]</code> automatisch synchron gehalten werden,
+    dafür braucht es hier kein Signal — <code>FormsModule</code> übernimmt das).
+  </p>
+
+  <h4>2. Beim Erstellen der Komponente: Daten laden</h4>
+  <pre><code>constructor() {
+  this.api.getTrainers().subscribe((t) =&gt; this.trainers.set(t));
+  this.api.getRules().subscribe((r) =&gt; this.rules.set(r));
+}</code></pre>
+  <p>
+    Hier siehst du <code>.subscribe(...)</code> aus Schritt&nbsp;19 in Aktion: "Wenn die Antwort vom Backend
+    ankommt, aktualisiere das Signal." Zwei unabhängige Requests laufen parallel (keiner wartet auf den anderen).
+  </p>
+
+  <h4>3. Nutzeraktion: Prüfen-Button</h4>
+  <pre><code>check() {
+  this.loading.set(true);
+  this.api.checkRoster(this.selectedTrainerId, this.selectedRuleId).subscribe({
+    next: (res) =&gt; { this.result.set(res); this.loading.set(false); },
+    error: () =&gt; this.loading.set(false),
+  });
+}</code></pre>
+  <p>
+    <code>loading</code> wird bewusst <em>vor</em> dem Request auf <code>true</code> gesetzt und in beiden Fällen
+    (Erfolg <em>und</em> Fehler) wieder zurückgesetzt — sonst würde bei einem Netzwerkfehler der Button für immer
+    im "Prüfe…"-Zustand hängen bleiben.
+  </p>
+
+  <h4>4. Das Template reagiert automatisch</h4>
+  <pre><code>&lt;button (click)="check()" [disabled]="!selectedTrainerId || !selectedRuleId || loading()"&gt;
+  {{ loading() ? 'Prüfe…' : 'Prüfen' }}
+&lt;/button&gt;
+
+@if (result(); as res) {
+  @if (res.isCompliant) {
+    &lt;p&gt;✅ Regelkonform&lt;/p&gt;
+  } @else {
+    &lt;ul&gt;
+      @for (v of res.violations; track v.id) {
+        &lt;li&gt;[{{ v.severity }}] {{ v.details }}&lt;/li&gt;
+      }
+    &lt;/ul&gt;
+  }
+}</code></pre>
+  <p>
+    <code>@if</code>/<code>@for</code> sind die neue Control-Flow-Syntax (seit Angular&nbsp;17, ersetzt die
+    älteren <code>*ngIf</code>/<code>*ngFor</code>-Direktiven). <code>@if (result(); as res)</code> liest das
+    Signal <em>einmal</em> aus und merkt sich den Wert unter <code>res</code> für den ganzen Block — sonst müsste
+    man <code>result()</code> mehrfach aufrufen. <code>track v.id</code> bei <code>@for</code> sagt Angular, wie
+    es einzelne Listeneinträge wiedererkennt, um beim Neu-Rendern nur geänderte DOM-Elemente anzufassen statt
+    alles neu zu bauen.
+  </p>
+  <div class="card why">
+    <strong>Der komplette Kreislauf dieser Komponente:</strong> Konstruktor lädt Daten → Nutzer wählt Trainer +
+    Regel per Dropdown → Klick auf "Prüfen" → <code>ApiService</code> schickt <code>POST /compliance/check</code>
+    → Backend durchläuft <code>ComplianceController → ComplianceService → RuleEngineService</code> (Schritte&nbsp;10-12)
+    → Antwort kommt zurück → <code>result</code>-Signal wird gesetzt → Template rendert automatisch neu. Das ist
+    der komplette Weg einer einzigen Nutzeraktion durch <em>alle</em> Schichten dieses Tutorials.
+  </div>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step22">
+  <h2><span class="step-badge">Schritt 22</span>ViolationListComponent &amp; Pipes</h2>
+  <div class="filepath">frontend/src/app/compliance/violation-list.component.ts</div>
+  <p>
+    Strukturell fast identisch zu Schritt&nbsp;21 (Daten im Konstruktor laden, in ein Signal schreiben, im
+    Template mit <code>@for</code> ausgeben) — der einzige neue Baustein hier:
+  </p>
+  <pre><code>imports: [DatePipe],
+// ...
+&lt;td&gt;{{ v.createdAt | date: 'short' }}&lt;/td&gt;</code></pre>
+  <p>
+    Eine <strong>Pipe</strong> (<code>| date: 'short'</code>) transformiert einen Wert nur für die Anzeige, ohne
+    die zugrunde liegenden Daten zu verändern — hier wird ein rohes ISO-Datum wie
+    <code>"2026-08-08T11:57:36.000Z"</code> in ein lesbares Format wie <code>08.08.26, 11:57</code> umgewandelt.
+    Seit Standalone Components müssen auch eingebaute Pipes wie <code>DatePipe</code> explizit importiert werden —
+    derselbe Grundsatz wie bei <code>imports: [CommonModule]</code> früher, nur granularer.
+  </p>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step23">
+  <h2><span class="step-badge">Schritt 23</span>Frontend starten &amp; ausprobieren</h2>
+  <p>Backend muss weiterhin laufen (Schritt&nbsp;15). In einem neuen Terminal, im Ordner <code>frontend/</code>:</p>
+  <pre><code>npm install
+npm start</code></pre>
+  <p>
+    Öffne <code>http://localhost:4200</code>. Wähle "Trainer Bo" und "Great League Cap" und klicke "Prüfen" — du
+    solltest zwei Verstöße sehen (Charizard ist zu hochstufig und trägt einen Master Ball, siehe Seed-Daten aus
+    Schritt&nbsp;14). Wechsle zur "Verstöße"-Seite: derselbe Eintrag taucht dort wieder auf, weil er echt in der
+    (Arbeitsspeicher-)Datenbank gespeichert wurde (Schritt&nbsp;12).
+  </p>
+  <div class="card pitfall">
+    <strong>Nichts passiert beim Klick?</strong> Öffne die Browser-Konsole (F12). Der häufigste Fehler an dieser
+    Stelle: das Backend läuft nicht (Verbindung wird abgelehnt) oder <code>cors: true</code> fehlt in
+    <code>main.ts</code> (der Browser blockiert dann den Request mit einer CORS-Fehlermeldung in der Konsole,
+    siehe "Die große Vogelperspektive" ganz oben).
+  </div>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step24">
+  <h2><span class="step-badge">Schritt 24</span>Warum Jest UND Cypress?</h2>
+  <p>
+    Du hast in Schritt&nbsp;9 und&nbsp;16 schon Jest-Tests gesehen. Warum reicht das nicht, warum gibt es
+    zusätzlich Cypress?
+  </p>
+  <table>
+    <tr><th>Frage</th><th>Jest (Schritt 9, 16)</th><th>Cypress (Schritt 25)</th></tr>
+    <tr><td>Was wird geprüft?</td><td>Einzelne Funktionen/Klassen, isoliert</td><td>Die komplette Anwendung, wie ein echter Nutzer sie erlebt (echter Browser, echtes DOM)</td></tr>
+    <tr><td>Geschwindigkeit</td><td>Sehr schnell (Millisekunden)</td><td>Langsamer (Sekunden, weil ein echter Browser hochfährt)</td></tr>
+    <tr><td>Wie viele davon?</td><td>Viele, für jede Logik-Verzweigung</td><td>Wenige, nur für die wichtigsten Nutzer-Abläufe</td></tr>
+  </table>
+  <p>
+    Das ist die "Testpyramide": eine breite Basis an schnellen Jest-Tests, eine schmale Spitze an langsameren,
+    aber realitätsnahen Cypress-Tests. Jest allein hätte z. B. nicht bemerkt, wenn das <code>&lt;select&gt;</code>-Element
+    im Template versehentlich falsch mit dem Signal verbunden wäre — dafür muss tatsächlich ein Browser rendern
+    und klicken.
+  </p>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step25">
+  <h2><span class="step-badge">Schritt 25</span>Der Cypress-Test im Detail</h2>
+  <div class="filepath">frontend/cypress/e2e/roster-compliance.cy.ts</div>
+  <pre><code>beforeEach(() =&gt; {
+  cy.intercept('GET', '**/trainers', { fixture: 'trainers.json' }).as('getTrainers');
+  cy.intercept('GET', '**/rules', { fixture: 'rules.json' }).as('getRules');
+  cy.visit('/check');
+  cy.wait(['@getTrainers', '@getRules']);
+});</code></pre>
+  <h3>Warum wird hier das echte Backend NICHT gebraucht?</h3>
+  <p>
+    <code>cy.intercept(...)</code> fängt den Netzwerk-Request ab, bevor er den Browser verlässt, und beantwortet
+    ihn stattdessen mit einer <strong>Fixture</strong> — vorbereiteten JSON-Testdaten aus
+    <code>cypress/fixtures/trainers.json</code>. Das macht den Test schnell, zuverlässig (kein zufälliges
+    Fehlschlagen wegen eines langsamen Backends) und unabhängig davon, ob gerade ein Backend läuft. Der Test prüft
+    ausschließlich: "verhält sich das Frontend richtig, <em>gegeben</em> diese Antwort?" — nicht, ob das Backend
+    selbst korrekt ist (das prüfen die Jest-Tests aus Schritt&nbsp;16).
+  </p>
+  <pre><code>it('zeigt Verstöße an, wenn das Team nicht regelkonform ist', () =&gt; {
+  cy.intercept('POST', '**/compliance/check', { fixture: 'violation-result.json' }).as('checkRoster');
+
+  cy.get('select').eq(0).select('Trainer Bo');
+  cy.get('select').eq(1).select('Great League Cap');
+  cy.contains('button', 'Prüfen').click();
+
+  cy.wait('@checkRoster');
+  cy.contains('Verstoß/Verstöße gefunden').should('be.visible');
+});</code></pre>
+  <p>
+    <code>cy.get(...)</code> sucht Elemente wie ein echter Nutzer (über sichtbaren Text/Selektoren),
+    <code>.select(...)</code>/<code>.click()</code> simulieren echte Interaktion, <code>cy.wait('@checkRoster')</code>
+    wartet gezielt, bis der zuvor definierte Intercept tatsächlich ausgelöst wurde — kein zufälliges
+    <code>sleep(1000)</code> nötig, Cypress wartet automatisch (Retry-Ability), bis Bedingungen erfüllt sind.
+  </p>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step26">
+  <h2><span class="step-badge">Schritt 26</span>Warum CI/CD überhaupt?</h2>
+  <p>
+    Bisher hast du alles lokal auf deinem Rechner laufen lassen. Das Problem in einem echten Team: "Auf meinem
+    Rechner hat's funktioniert" ist kein verlässlicher Qualitätsnachweis — unterschiedliche Node-Versionen,
+    vergessene lokale Änderungen, oder schlicht ein übersehener fehlgeschlagener Test können durchrutschen.
+  </p>
+  <p>
+    <strong>CI (Continuous Integration)</strong> heißt: Bei jeder Änderung laufen Build und Tests automatisch, auf
+    einer neutralen, sauberen Maschine — nicht auf deinem Rechner. <strong>CD (Continuous Delivery/Deployment)</strong>
+    baut darauf auf: Wenn alles grün ist, kann automatisch (oder nach manueller Freigabe) ausgeliefert werden.
+    Genau das bildet dieses Projekt zweimal ab — einmal mit GitHub Actions, einmal mit Jenkins, weil beide in
+    deiner Stellenausschreibung genannt sind.
+  </p>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step27">
+  <h2><span class="step-badge">Schritt 27</span>ci.yml Zeile für Zeile</h2>
+  <div class="filepath">.github/workflows/ci.yml</div>
+  <pre><code>on:
+  pull_request: { branches: [main] }
+  push: { branches: [main] }</code></pre>
+  <p>Der Workflow läuft bei jedem Pull Request gegen <code>main</code> und bei jedem Push auf <code>main</code> selbst.</p>
+  <pre><code>jobs:
+  backend:
+    steps:
+      - run: npm install
+      - run: npm run test -- --coverage
+      - run: npm run build</code></pre>
+  <p>
+    Ein <strong>Job</strong> ist eine Gruppe von Schritten, die auf einer frischen virtuellen Maschine läuft.
+    <code>backend</code> und <code>frontend</code> sind zwei unabhängige Jobs — sie laufen standardmäßig
+    <em>parallel</em>, nicht nacheinander, weil sie einander nicht brauchen. Das spart Zeit.
+  </p>
+  <pre><code>e2e:
+  needs: [backend, frontend]</code></pre>
+  <p>
+    <code>needs</code> erzwingt eine Reihenfolge: Der <code>e2e</code>-Job (Cypress) wartet, bis
+    <code>backend</code> UND <code>frontend</code> erfolgreich durchgelaufen sind. Das ist absichtlich so
+    gestaffelt: Es wäre Zeitverschwendung, die langsamen End-to-End-Tests zu starten, wenn schon die schnellen
+    Unit-Tests fehlschlagen.
+  </p>
+  <pre><code>deploy:
+  needs: [e2e]
+  if: github.ref == 'refs/heads/main'
+  environment: production</code></pre>
+  <div class="card why">
+    <strong>Das Approval-Gate:</strong> <code>environment: production</code> kombiniert mit "Required Reviewers"
+    in den GitHub-Repo-Einstellungen sorgt dafür, dass dieser Job <em>pausiert</em> und auf eine manuelle
+    Bestätigung wartet, bevor er läuft — das ist die technische Umsetzung von "achieve approval" /
+    "release after confirmation" aus deiner Stellenausschreibung, nicht nur ein Textbaustein, sondern ein echter
+    Kontrollpunkt in der Pipeline.
+  </div>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="step28">
+  <h2><span class="step-badge">Schritt 28</span>Jenkinsfile im Vergleich</h2>
+  <div class="filepath">Jenkinsfile</div>
+  <pre><code>stage('Approval') {
+  steps {
+    input message: 'Freigabe fuer Produktion erteilen?'
+  }
+}</code></pre>
+  <p>
+    Dasselbe Konzept wie das GitHub-Actions-Environment-Gate, nur mit Jenkins-eigener Syntax: der
+    <code>input</code>-Step pausiert die Pipeline komplett, bis jemand im Jenkins-Interface auf "bestätigen"
+    klickt. Vergleiche die <code>stages</code> im Jenkinsfile mit den <code>jobs</code>/<code>steps</code> in
+    <code>ci.yml</code> — inhaltlich derselbe Ablauf (Backend testen → Frontend bauen → E2E → Freigabe → Deploy),
+    nur in zwei verschiedenen Werkzeugen ausgedrückt. Genau dieser Vergleich ist eine gute Vorbereitung auf die
+    Interviewfrage "warum könnte ein Unternehmen beide Tools gleichzeitig nutzen?" (siehe Interview-Guide,
+    Kapitel "GitHub Actions").
+  </p>
+
+  <a class="back-top" href="#howto">↑ zurück zum Anfang</a>
+</section>
+
+<section id="full-picture">
+  <h2>Der komplette Kreislauf</h2>
+  <p>
+    Zum Schluss der ganze Weg einer einzigen Nutzeraktion, einmal von vorne bis hinten durch jede Schicht, die du
+    in diesem Tutorial gebaut hast:
+  </p>
+  <ol>
+    <li>Nutzer klickt "Prüfen" im Browser → <code>RosterCheckComponent.check()</code> (Schritt&nbsp;21)</li>
+    <li><code>ApiService</code> schickt <code>POST /compliance/check</code> per <code>HttpClient</code> (Schritt&nbsp;19)</li>
+    <li><code>ComplianceController</code> nimmt den Request an, <code>ValidationPipe</code> prüft das DTO (Schritt&nbsp;3, 10)</li>
+    <li><code>ComplianceService</code> lädt Trainer + Regel über die jeweiligen Repositories (Schritt&nbsp;12)</li>
+    <li><code>RuleEngineService</code> prüft das Roster gegen die Regel — reine Logik, keine DB (Schritt&nbsp;8)</li>
+    <li>Gefundene Verstöße werden transaktional als <code>Violation</code>-Zeilen gespeichert (Schritt&nbsp;12)</li>
+    <li>Bei Verstößen: <code>PublisherPort</code> "publiziert" ein Event (Schritt&nbsp;13)</li>
+    <li>Antwort geht als JSON zurück zum Frontend</li>
+    <li><code>result</code>-Signal wird gesetzt, Template rendert automatisch neu (Schritt&nbsp;20-21)</li>
+  </ol>
+  <p>
+    Und zwei Sicherheitsnetze, die bei jeder Code-Änderung an diesem Kreislauf automatisch mitlaufen: die
+    Jest-Tests (Schritt&nbsp;9, 16) prüfen die Logik-Bausteine isoliert, der Cypress-Test (Schritt&nbsp;25) prüft
+    den kompletten Ablauf aus Nutzersicht, und die CI-Pipeline (Schritt&nbsp;27-28) sorgt dafür, dass das bei
+    jeder Änderung automatisch passiert, bevor irgendetwas Produktion erreicht.
+  </p>
+</section>
+
+<section id="next">
+  <h2>Wie geht's weiter?</h2>
+  <ul class="checklist">
+    <li>Öffne <code>EXERCISE.md</code> — die neun Stages dort folgen jetzt einer Struktur, die du komplett verstehst, statt nur nachzumachen</li>
+    <li>Verändere bewusst etwas Kleines und beobachte, was kaputtgeht (z. B. entferne <code>relations: ['roster']</code> in <code>trainers.service.ts</code> und schau, was sich in der API-Antwort ändert)</li>
+    <li>Schau dir bei Unsicherheit die passenden Kapitel im <em>Interview-Vorbereitung</em>-Guide an — die Konzepte hier und dort greifen bewusst ineinander</li>
+    <li>Wenn du magst: push das Projekt in ein eigenes GitHub-Repo und lass <code>ci.yml</code> wirklich einmal laufen</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>
