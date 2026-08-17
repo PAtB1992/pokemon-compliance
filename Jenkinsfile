@@ -101,16 +101,16 @@ pipeline {
     }
   }
 
-  post {
-    success {
-      node {
-        script { notifyGitHub('success', 'Alle Stages erfolgreich') }
-      }
-    }
-    failure {
-      node {
-        script { notifyGitHub('failure', 'Pipeline fehlgeschlagen') }
-      }
+post {
+  success {
+    node('') {
+      script { notifyGitHub('success', 'Alle Stages erfolgreich') }
     }
   }
+  failure {
+    node('') {
+      script { notifyGitHub('failure', 'Pipeline fehlgeschlagen') }
+    }
+  }
+}
 }
