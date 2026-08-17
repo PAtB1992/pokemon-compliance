@@ -4,7 +4,7 @@
   "private": true,
   "description": "Angular-Frontend fuer das Pokemon-Compliance-Uebungsprojekt (Interview-Vorbereitung).",
   "scripts": {
-    "start": "ng serve",
+    "start": "ng serve --host 0.0.0.0",
     "build": "ng build",
     "e2e": "cypress open",
     "e2e:ci": "cypress run"

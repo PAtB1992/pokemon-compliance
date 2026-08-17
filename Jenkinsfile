@@ -2,21 +2,26 @@ pipeline {
   agent none
 
   stages {
-    stage('Backend: Install & Test') {
-      agent {
-        docker { image 'node:20' }
-      }
-      environment {
-        HOME = "${WORKSPACE}"
-      }
-      steps {
-        dir('backend') {
-          sh 'npm ci'
-          sh 'npm run test -- --coverage'
-          sh 'npm run build'
-        }
-      }
+stage('Backend: Install & Test') {
+  agent {
+    docker { image 'node:20' }
+  }
+  environment {
+    HOME = "${WORKSPACE}"
+  }
+  steps {
+    dir('backend') {
+      sh 'npm ci'
+      sh 'npm run test -- --coverage'
+      sh 'npm run build'
     }
+  }
+  post {
+    always {
+      junit allowEmptyResults: true, testResults: 'backend/coverage/**/*.xml'
+    }
+  }
+}
 
     stage('Frontend: Install & Build') {
       agent {
@@ -64,12 +69,6 @@ pipeline {
       steps {
         echo 'Deploy nach Produktion (z. B. cf push auf SAP BTP Cloud Foundry).'
       }
-    }
-  }
-
-  post {
-    always {
-      junit allowEmptyResults: true, testResults: 'backend/coverage/**/*.xml'
     }
   }
 }
