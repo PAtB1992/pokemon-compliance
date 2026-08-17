@@ -6,6 +6,7 @@ pipeline {
 
   stages {
     stage('Backend: Install & Test') {
+      agent { docker { image 'node:20'}}
       steps {
         dir('backend') {
           sh 'npm install'
