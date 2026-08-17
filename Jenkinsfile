@@ -4,33 +4,36 @@
 pipeline {
   agent any
 
-    stages {
-      stage('Backend: Install & Test') {
-        agent { docker { image 'node:20' } }
-        environment {
-          HOME = "${WORKSPACE}"
-        }
-        steps {
-          dir('backend') {
-            sh 'npm install'
-            sh 'npm run test -- --coverage'
-            sh 'npm run build'
-          }
+    stage('Backend: Install & Test') {
+      agent {
+        docker { image 'node:20' }
+      }
+      environment {
+        HOME = "${WORKSPACE}"
+      }
+      steps {
+        dir('backend') {
+          sh 'npm ci'
+          sh 'npm run test -- --coverage'
+          sh 'npm run build'
         }
       }
+    }
 
-      stage('Frontend: Install & Build') {
-        agent { docker { image 'node:20' } }
-        environment {
-          HOME = "${WORKSPACE}"
-        }
-        steps {
-          dir('frontend') {
-            sh 'npm install'
-            sh 'npm run build'
-          }
+    stage('Frontend: Install & Build') {
+      agent {
+        docker { image 'node:20' }
+      }
+      environment {
+        HOME = "${WORKSPACE}"
+      }
+      steps {
+        dir('frontend') {
+          sh 'npm ci'
+          sh 'npm run build'
         }
       }
+    }
 
     stage('E2E: Cypress') {
       steps {
